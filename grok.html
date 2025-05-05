@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyManager - Gestione Impegni di Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --text-color: #2c3e50;
+            --border-radius: 8px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f7fa;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo i {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .logo h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .menu-item {
+            padding: 12px 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .subject-list {
+            margin-top: 20px;
+        }
+        
+        .subject-list h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            padding-left: 15px;
+        }
+        
+        .subject-item {
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .subject-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .subject-item .delete-subject {
+            font-size: 12px;
+            color: var(--danger-color);
+            cursor: pointer;
+            display: none;
+        }
+        
+        .subject-item:hover .delete-subject {
+            display: block;
+        }
+        
+        .add-subject {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            padding: 8px 15px;
+        }
+        
+        .add-subject:hover {
+            color: white;
+        }
+        
+        .add-subject i {
+            margin-right: 8px;
+        }
+        
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .search-bar {
+            position: relative;
+            width: 300px;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px;
+            padding-left: 40px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 14px;
+        }
+        
+        .search-bar i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            position: relative;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-card h3 {
+            font-size: 16px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .trend {
+            font-size: 14px;
+            color: var(--secondary-color);
+        }
+        
+        .stat-card .trend.down {
+            color: var(--danger-color);
+        }
+        
+        .pomodoro-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+        
+        .pomodoro-container h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .timer-display {
+            font-size: 72px;
+            font-weight: 700;
+            margin: 30px 0;
+            color: var(--dark-color);
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .timer-btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .timer-btn i {
+            margin-right: 8px;
+        }
+        
+        .timer-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .timer-btn.reset {
+            background-color: var(--light-color);
+            color: var(--text-color);
+        }
+        
+        .timer-btn.reset:hover {
+            background-color: #bdc3c7;
+        }
+        
+        .timer-modes {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .timer-mode {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: #f1f1f1;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .timer-mode.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .pomodoro-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        
+        .pomodoro-stat {
+            text-align: center;
+        }
+        
+        .pomodoro-stat .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .pomodoro-stat .label {
+            font-size: 14px;
+            color: #777;
+        }
+        
+        .memory-palace {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        
+        .memory-palace h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .palace-visualization {
+            background-color: #f9f9f9;
+            border-radius: var(--border-radius);
+            height: 400px;
+            position: relative;
+            overflow: auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px dashed #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-content: flex-start;
+        }
+        
+        .memory-item {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+        
+        .memory-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .memory-item i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .memory-item .title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .memory-item .desc {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .memory-item .actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            gap: 5px;
+        }
+        
+        .memory-item:hover .actions {
+            display: flex;
+        }
+        
+        .memory-item .action-btn {
+            background: none;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .palace-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn.secondary {
+            background-color: var(--light-color);
+            color: var(--text-color);
+        }
+        
+        .btn.secondary:hover {
+            background-color: #bdc3c7;
+        }
+        
+        .notes-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .notes-header h2 {
+            font-size: 22px;
+        }
+        
+        .notes-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .note-card {
+            background-color: #fff8e1;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            min-height: 200px;
+            box-shadow: var(--shadow);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .note-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .note-card.math {
+            background-color: #e3f2fd;
+        }
+        
+        .note-card.science {
+            background-color: #e8f5e9;
+        }
+        
+        .note-card.history {
+            background-color: #ffebee;
+        }
+        
+        .note-card.languages, .note-card.literature {
+            background-color: #f3e5f5;
+        }
+        
+        .note-card h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .note-card p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .note-card .date {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .note-card .subject-tag {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .note-card .actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            gap: 5px;
+        }
+        
+        .note-card:hover .actions {
+            display: flex;
+        }
+        
+        .note-card .action-btn {
+            background: none;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            heightnodejs
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            width: 500px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            font-size: 20px;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .progress-container {
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            height: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            width: 0;
+            transition: width 0.5s ease;
+        }
+        
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+            z-index: 101;
+            cursor: pointer;
+        }
+        
+        .tasks-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: var(--border-radius);
+            position: relative;
+        }
+        
+        .task-item.completed {
+            background-color: #e8f5e9;
+            text-decoration: line-through;
+        }
+        
+        .task-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        
+        .task-item .task-text {
+            flex-grow: 1;
+        }
+        
+        .task-item .actions {
+            display: none;
+            gap: 5px;
+        }
+        
+        .task-item:hover .actions {
+            display: flex;
+        }
+        
+        .stats-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-container {
+            margin-bottom: 30px;
+        }
+        
+        .chart-container canvas {
+            max-width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 250px;
+                height: 100%;
+                z-index: 100;
+            }
+            
+            .sidebar.active {
+                display: block;
+            }
+            
+            .mobile-menu-toggle {
+                display: flex;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                <i class="fas fa-book"></i>
+                <h2>StudyManager</h2>
+            </div>
+            
+            <div class="menu-item active" data-section="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </div>
+            
+            <div class="menu-item" data-section="pomodoro">
+                <i class="fas fa-clock"></i>
+                <span>Pomodoro Timer</span>
+            </div>
+            
+            <div class="menu-item" data-section="memory-palace">
+                <i class="fas fa-brain"></i>
+                <span>Palazzo della Memoria</span>
+            </div>
+            
+            <div class="menu-item" data-section="notes">
+                <i class="fas fa-sticky-note"></i>
+                <span>Appunti</span>
+            </div>
+            
+            <div class="menu-item" data-section="tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Task</span>
+            </div>
+            
+            <div class="menu-item" data-section="stats">
+                <i class="fas fa-chart-line"></i>
+                <span>Statistiche</span>
+            </div>
+            
+            <div class="subject-list" id="subjectList">
+                <h3>Materie</h3>
+                <div class="subject-item" data-subject="Matematica">Matematica <i class="fas fa-trash delete-subject"></i></div>
+                <div class="subject-item" data-subject="Fisica">Fisica <i class="fas fa-trash delete-subject"></i></div>
+                <div class="subject-item" data-subject="Storia">Storia <i class="fas fa-trash delete-subject"></i></div>
+                <div class="subject-item" data-subject="Letteratura">Letteratura <i class="fas fa-trash delete-subject"></i></div>
+                <div class="subject-item" data-subject="Inglese">Inglese <i class="fas fa-trash delete-subject"></i></div>
+                
+                <div class="add-subject" id="addSubjectBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>Aggiungi Materia</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            
+            <div class="header">
+                <h1 id="sectionTitle">Dashboard</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Cerca...">
+                </div>
+            </div>
+            
+            <div class="tabs" id="dashboardTabs">
+                <div class="tab active" data-tab="overview">Panoramica</div>
+                <div class="tab" data-tab="today">Oggi</div>
+                <div class="tab" data-tab="week">Questa Settimana</div>
+                <div class="tab" data-tab="calendar">Calendario</div>
+            </div>
+            
+            <div id="dashboard" class="section active">
+                <div id="overview" class="tab-content active">
+                    <div class="dashboard">
+                        <div class="stat-card">
+                            <h3>Tempo di Studio Oggi</h3>
+                            <div class="value" id="studyTimeToday">3h 45m</div>
+                            <div class="trend">+15% rispetto a ieri</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Pomodori Completati</h3>
+                            <div class="value" id="pomodoroCount">7</div>
+                            <div class="trend">+2 rispetto a ieri</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Task Completati</h3>
+                            <div class="value" id="taskProgress">12/15</div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="taskProgressBar" style="width: 80%;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Memoria</h3>
+                            <div class="value" id="memoryCount">24</div>
+                            <div class="trend">Elementi memorizzati</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="today" class="tab-content" style="display: none;">
+                    <h3>Attività di Oggi</h3>
+                    <p>Elenco delle attività pianificate per oggi...</p>
+                </div>
+                <div id="week" class="tab-content" style="display: none;">
+                    <h3>Questa Settimana</h3>
+                    <p>Riepilogo delle attività settimanali...</p>
+                </div>
+                <div id="calendar" class="tab-content" style="display: none;">
+                    <h3>Calendario</h3>
+                    <p>Visualizzazione calendario in costruzione...</p>
+                </div>
+            </div>
+            
+            <!-- Pomodoro Timer Section -->
+            <div id="pomodoro" class="section" style="display: none;">
+                <div class="pomodoro-container">
+                    <h2>Tecnica del Pomodoro</h2>
+                    
+                    <div class="timer-modes">
+                        <div class="timer-mode active" data-mode="pomodoro">Pomodoro</div>
+                        <div class="timer-mode" data-mode="short-break">Pausa Breve</div>
+                        <div class="timer-mode" data-mode="long-break">Pausa Lunga</div>
+                    </div>
+                    
+                    <div class="timer-display" id="timerDisplay">25:00</div>
+                    
+                    <div class="timer-controls">
+                        <button class="timer-btn" id="startPauseBtn">
+                            <i class="fas fa-play"></i>
+                            Inizia
+                        </button>
+                        <button class="timer-btn reset" id="resetBtn">
+                            <i class="fas fa-redo"></i>
+                            Reset
+                        </button>
+                    </div>
+                    
+                    <div class="pomodoro-stats">
+                        <div class="pomodoro-stat">
+                            <div class="value" id="pomodoroCountStat">7</div>
+                            <div class="label">Completati Oggi</div>
+                        </div>
+                        <div class="pomodoro-stat">
+                            <div class="value" id="focusTime">3h 45m</div>
+                            <div class="label">Tempo Focale</div>
+                        </div>
+                        <div class="pomodoro-stat">
+                            <div class="value" id="weeklyCount">32</div>
+                            <div class="label">Questa Settimana</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Memory Palace Section -->
+            <div id="memory-palace" class="section" style="display: none;">
+                <div class="memory-palace">
+                    <h2>Palazzo della Memoria</h2>
+                    
+                    <div class="palace-visualization" id="palaceVisualization">
+                        <div class="memory-item" data-id="1">
+                            <i class="fas fa-square-root-alt"></i>
+                            <div class="title">Formule Trigonometriche</div>
+                            <div class="desc">Sen²(x) + Cos²(x) = 1</div>
+                            <div class="actions">
+                                <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-item" data-id="2">
+                            <i class="fas fa-atom"></i>
+                            <div class="title">Leggi di Newton</div>
+                            <div class="desc">F = ma</div>
+                            <div class="actions">
+                                <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-item" data-id="3">
+                            <i class="fas fa-landmark"></i>
+                            <div class="title">Date Storia</div>
+                            <div class="desc">1789 - Rivoluzione Francese</div>
+                            <div class="actions">
+                                <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-item" data-id="4">
+                            <i class="fas fa-language"></i>
+                            <div class="title">Verbi Irregolari</div>
+                            <div class="desc">Go - Went - Gone</div>
+                            <div class="actions">
+                                <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-item" data-id="5">
+                            <i class="fas fa-book"></i>
+                            <div class="title">Autori Letteratura</div>
+                            <div class="desc">Dante, Petrarca, Boccaccio</div>
+                            <div class="actions">
+                                <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="palace-controls">
+                        <button class="btn" id="addMemoryBtn">
+                            <i class="fas fa-plus"></i>
+                            Aggiungi Elemento
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-exchange-alt"></i>
+                            Cambia Stanza
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes Section -->
+            <div id="notes" class="section" style="display: none;">
+                <div class="notes-container">
+                    <div class="notes-header">
+                        <h2>I Miei Appunti</h2>
+                        <button class="btn" id="addNoteBtn">
+                            <i class="fas fa-plus"></i>
+                            Nuovo Appunto
+                        </button>
+                    </div>
+                    
+                    <div class="notes-list" id="notesList">
+                        <div class="note-card math" data-id="1">
+                            <h3>Derivate e Integrali</h3>
+                            <p>Appunti sulle regole di derivazione e tecniche di integrazione...</p>
+                            <div class="subject-tag">Matematica</div>
+                            <div class="date">03/05/2025</div>
+                            <div class="actions">
+                                <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="note-card science" data-id="2">
+                            <h3>Leggi della Termodinamica</h3>
+                            <p>Prima, seconda e terza legge della termodinamica con esempi pratici...</p>
+                            <div class="subject-tag">Fisica</div>
+                            <div class="date">02/05/2025</div>
+                            <div class="actions">
+                                <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="note-card history" data-id="3">
+                            <h3>Seconda Guerra Mondiale</h3>
+                            <p>Cause, eventi principali e conseguenze del conflitto mondiale...</p>
+                            <div class="subject-tag">Storia</div>
+                            <div class="date">01/05/2025</div>
+                            <div class="actions">
+                                <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="note-card languages" data-id="4">
+                            <h3>Phrasal Verbs</h3>
+                            <p>Principali phrasal verbs inglesi con esempi di utilizzo...</p>
+                            <div class="subject-tag">Inglese</div>
+                            <div class="date">30/04/2025</div>
+                            <div class="actions">
+                                <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tasks Section -->
+            <div id="tasks" class="section" style="display: none;">
+                <div class="tasks-container">
+                    <div class="tasks-header">
+                        <h2>I Miei Task</h2>
+                        <button class="btn" id="addTaskBtn">
+                            <i class="fas fa-plus"></i>
+                            Nuovo Task
+                        </button>
+                    </div>
+                    <div class="task-list" id="taskList">
+                        <!-- Tasks will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics Section -->
+            <div id="stats" class="section" style="display: none;">
+                <div class="stats-container">
+                    <h2>Statistiche</h2>
+                    <div class="chart-container">
+                        <h3>Tempo di Studio Settimanale</h3>
+                        <canvas id="studyTimeChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Pomodori Completati</h3>
+                        <canvas id="pomodoroChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="newNoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="noteModalTitle">Nuovo Appunto</h2>
+                <button class="close-modal" data-modal="newNoteModal">×</button>
+            </div>
+            <div class="form-group">
+                <label for="noteTitle">Titolo</label>
+                <input type="text" id="noteTitle" class="form-control" placeholder="Inserisci titolo" required>
+            </div>
+            <div class="form-group">
+                <label for="noteSubject">Materia</label>
+                <select id="noteSubject" class="form-control" required>
+                    <option value="math">Matematica</option>
+                    <option value="science">Fisica</option>
+                    <option value="history">Storia</option>
+                    <option value="literature">Letteratura</option>
+                    <option value="languages">Inglese</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="noteContent">Contenuto</label>
+                <textarea id="noteContent" class="form-control" placeholder="Scrivi i tuoi appunti qui..." required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary close-modal" data-modal="newNoteModal">Annulla</button>
+                <button class="btn" id="saveNoteBtn">Salva</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="newMemoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="memoryModalTitle">Nuovo Elemento di Memoria</h2>
+                <button class="close-modal" data-modal="newMemoryModal">×</button>
+            </div>
+            <div class="form-group">
+                <label for="memoryTitle">Titolo</label>
+                <input type="text" id="memoryTitle" class="form-control" placeholder="Inserisci titolo" required>
+            </div>
+            <div class="form-group">
+                <label for="memoryDesc">Descrizione</label>
+                <input type="text" id="memoryDesc" class="form-control" placeholder="Inserisci descrizione" required>
+            </div>
+            <div class="form-group">
+                <label for="memoryIcon">Icona</label>
+                <select id="memoryIcon" class="form-control" required>
+                    <option value="fa-square-root-alt">Matematica</option>
+                    <option value="fa-atom">Fisica</option>
+                    <option value="fa-landmark">Storia</option>
+                    <option value="fa-language">Lingue</option>
+                    <option value="fa-book">Letteratura</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary close-modal" data-modal="newMemoryModal">Annulla</button>
+                <button class="btn" id="saveMemoryBtn">Salva</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="newTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="taskModalTitle">Nuovo Task</h2>
+                <button class="close-modal" data-modal="newTaskModal">×</button>
+            </div>
+            <div class="form-group">
+                <label for="taskText">Descrizione</label>
+                <input type="text" id="taskText" class="form-control" placeholder="Inserisci descrizione" required>
+            </div>
+            <div class="form-group">
+                <label for="taskDueDate">Scadenza</label>
+                <input type="date" id="taskDueDate" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary close-modal" data-modal="newTaskModal">Annulla</button>
+                <button class="btn" id="saveTaskBtn">Salva</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="addSubjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Aggiungi Materia</h2>
+                <button class="close-modal" data-modal="addSubjectModal">×</button>
+            </div>
+            <div class="form-group">
+                <label for="subjectName">Nome Materia</label>
+                <input type="text" id="subjectName" class="form-control" placeholder="Inserisci nome materia" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary close-modal" data-modal="addSubjectModal">Annulla</button>
+                <button class="btn" id="saveSubjectBtn">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let data = {
+            subjects: ['Matematica', 'Fisica', 'Storia', 'Letteratura', 'Inglese'],
+            notes: [
+                { id: 1, title: 'Derivate e Integrali', subject: 'math', content: 'Appunti sulle regole di derivazione...', date: '03/05/2025', subjectName: 'Matematica' },
+                { id: 2, title: 'Leggi della Termodinamica', subject: 'science', content: 'Prima, seconda e terza legge...', date: '02/05/2025', subjectName: 'Fisica' },
+                { id: 3, title: 'Seconda Guerra Mondiale', subject: 'history', content: 'Cause, eventi principali...', date: '01/05/2025', subjectName: 'Storia' },
+                { id: 4, title: 'Phrasal Verbs', subject: 'languages', content: 'Principali phrasal verbs...', date: '30/04/2025', subjectName: 'Inglese' }
+            ],
+            memories: [
+                { id: 1, title: 'Formule Trigonometriche', desc: 'Sen²(x) + Cos²(x) = 1', icon: 'fa-square-root-alt' },
+                { id: 2, title: 'Leggi di Newton', desc: 'F = ma', icon: 'fa-atom' },
+                { id: 3, title: 'Date Storia', desc: '1789 - Rivoluzione Francese', icon: 'fa-landmark' },
+                { id: 4, title: 'Verbi Irregolari', desc: 'Go - Went - Gone', icon: 'fa-language' },
+                { id: 5, title: 'Autori Letteratura', desc: 'Dante, Petrarca, Boccaccio', icon: 'fa-book' }
+            ],
+            tasks: [],
+            pomodoro: {
+                count: 7,
+                focusTime: 3 * 3600 + 45 * 60,
+                weeklyCount: 32
+            },
+            stats: {
+                studyTime: [3.5, 4.2, 2.8, 5.0, 3.75, 4.0, 3.0],
+                pomodoros: [6, 8, 5, 9, 7, 8, 7]
+            }
+        };
+
+        // Navigation
+        const menuItems = document.querySelectorAll('.menu-item');
+        const sections = document.querySelectorAll('.section');
+        const sectionTitle = document.getElementById('sectionTitle');
+
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const sectionId = item.dataset.section;
+                menuItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                sections.forEach(section => section.style.display = 'none');
+                document.getElementById(sectionId).style.display = 'block';
+                sectionTitle.textContent = item.querySelector('span').textContent;
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        });
+
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        // Tab Switching
+        const tabs = document.querySelectorAll('#dashboardTabs .tab');
+        const tabContents = document.querySelectorAll('#dashboard .tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.style.display = 'none');
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).style.display = 'block';
+            });
+        });
+
+        // Search Functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            const currentSection = document.querySelector('.section.active').id;
+
+            if (currentSection === 'notes') {
+                const noteCards = document.querySelectorAll('.note-card');
+                noteCards.forEach(card => {
+                    const title = card.querySelector('h3').textContent.toLowerCase();
+                    const content = card.querySelector('p').textContent.toLowerCase();
+                    card.style.display = title.includes(query) || content.includes(query) ? 'block' : 'none';
+                });
+            } else if (currentSection === 'memory-palace') {
+                const memoryItems = document.querySelectorAll('.memory-item');
+                memoryItems.forEach(item => {
+                    const title = item.querySelector('.title').textContent.toLowerCase();
+                    const desc = item.querySelector('.desc').textContent.toLowerCase();
+                    item.style.display = title.includes(query) || desc.includes(query) ? 'flex' : 'none';
+                });
+            } else if (currentSection === 'tasks') {
+                const taskItems = document.querySelectorAll('.task-item');
+                taskItems.forEach(item => {
+                    const text = item.querySelector('.task-text').textContent.toLowerCase();
+                    item.style.display = text.includes(query) ? 'flex' : 'none';
+                });
+            }
+        });
+
+        // Pomodoro Timer
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startPauseBtn = document.getElementById('startPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const timerModes = document.querySelectorAll('.timer-mode');
+        const pomodoroCountEl = document.getElementById('pomodoroCount');
+        const pomodoroCountStatEl = document.getElementById('pomodoroCountStat');
+        const focusTimeEl = document.getElementById('focusTime');
+        const weeklyCountEl = document.getElementById('weeklyCount');
+
+        let timer;
+        let isRunning = false;
+        let timeLeft = 25 * 60;
+        let currentMode = 'pomodoro';
+        let pomodoroCount = data.pomodoro.count;
+        let focusTimeSeconds = data.pomodoro.focusTime;
+        let weeklyCount = data.pomodoro.weeklyCount;
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const seconds = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        function playSound() {
+            const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+            audio.play();
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                startPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pausa';
+                timer = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        isRunning = false;
+                        startPauseBtn.innerHTML = '<i class="fas fa-play"></i> Inizia';
+                        playSound();
+                        if (currentMode === 'pomodoro') {
+                            pomodoroCount++;
+                            focusTimeSeconds += 25 * 60;
+                            data.pomodoro.count = pomodoroCount;
+                            data.pomodoro.focusTime = focusTimeSeconds;
+                            weeklyCount++;
+                            data.pomodoro.weeklyCount = weeklyCount;
+                            data.stats.pomodoros.push(pomodoroCount);
+                            data.stats.pomodoros.shift();
+                            updateStats();
+                            updateDashboard();
+                            saveData();
+                            alert('Pomodoro completato!');
+                        } else {
+                            alert('Pausa completata!');
+                        }
+                        resetTimer();
+                    }
+                }, 1000);
+            } else {
+                clearInterval(timer);
+                isRunning = false;
+                startPauseBtn.innerHTML = '<i class="fas fa-play"></i> Inizia';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            startPauseBtn.innerHTML = '<i class="fas fa-play"></i> Inizia';
+            if (currentMode === 'pomodoro') timeLeft = 25 * 60;
+            else if (currentMode === 'short-break') timeLeft = 5 * 60;
+            else timeLeft = 15 * 60;
+            updateTimerDisplay();
+        }
+
+        timerModes.forEach(mode => {
+            mode.addEventListener('click', () => {
+                timerModes.forEach(m => m.classList.remove('active'));
+                mode.classList.add('active');
+                currentMode = mode.dataset.mode;
+                resetTimer();
+            });
+        });
+
+        startPauseBtn.addEventListener('click', startTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Modal Handling
+        const modals = document.querySelectorAll('.modal');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+
+        function openModal(modalId, data = {}) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('active');
+            if (data.id) modal.dataset.id = data.id;
+            if (modalId === 'newNoteModal' && data.title) {
+                document.getElementById('noteModalTitle').textContent = 'Modifica Appunto';
+                document.getElementById('noteTitle').value = data.title;
+                document.getElementById('noteSubject').value = data.subject;
+                document.getElementById('noteContent').value = data.content;
+            } else if (modalId === 'newMemoryModal' && data.title) {
+                document.getElementById('memoryModalTitle').textContent = 'Modifica Elemento';
+                document.getElementById('memoryTitle').value = data.title;
+                document.getElementById('memoryDesc').value = data.desc;
+                document.getElementById('memoryIcon').value = data.icon;
+            } else if (modalId === 'newTaskModal' && data.text) {
+                document.getElementById('taskModalTitle').textContent = 'Modifica Task';
+                document.getElementById('taskText').value = data.text;
+                document.getElementById('taskDueDate').value = data.dueDate || '';
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            delete modal.dataset.id;
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+            if (modalId === 'newNoteModal') {
+                document.getElementById('noteModalTitle').textContent = 'Nuovo Appunto';
+            } else if (modalId === 'newMemoryModal') {
+                document.getElementById('memoryModalTitle').textContent = 'Nuovo Elemento di Memoria';
+            } else if (modalId === 'newTaskModal') {
+                document.getElementById('taskModalTitle').textContent = 'Nuovo Task';
+            }
+        }
+
+        closeModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                closeModal(button.dataset.modal);
+            });
+        });
+
+        modals.forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+
+        // Subject Management
+        const addSubjectBtn = document.getElementById('addSubjectBtn');
+        const saveSubjectBtn = document.getElementById('saveSubjectBtn');
+        const subjectList = document.getElementById('subjectList');
+        const noteSubjectSelect = document.getElementById('noteSubject');
+
+        addSubjectBtn.addEventListener('click', () => openModal('addSubjectModal'));
+
+        saveSubjectBtn.addEventListener('click', () => {
+            const subjectName = document.getElementById('subjectName').value.trim();
+            if (!subjectName) {
+                alert('Il nome della materia è obbligatorio!');
+                return;
+            }
+            data.subjects.push(subjectName);
+            const subjectItem = document.createElement('div');
+            subjectItem.classList.add('subject-item');
+            subjectItem.dataset.subject = subjectName;
+            subjectItem.innerHTML = `${subjectName} <i class="fas fa-trash delete-subject"></i>`;
+            subjectList.insertBefore(subjectItem, addSubjectBtn);
+            const option = document.createElement('option');
+            option.value = subjectName.toLowerCase();
+            option.textContent = subjectName;
+            noteSubjectSelect.appendChild(option);
+            saveData();
+            closeModal('addSubjectModal');
+        });
+
+        subjectList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-subject')) {
+                const subjectItem = e.target.parentElement;
+                const subjectName = subjectItem.dataset.subject;
+                if (confirm(`Sei sicuro di voler eliminare "${subjectName}"?`)) {
+                    data.subjects = data.subjects.filter(s => s !== subjectName);
+                    subjectItem.remove();
+                    const option = noteSubjectSelect.querySelector(`option[value="${subjectName.toLowerCase()}"]`);
+                    if (option) option.remove();
+                    saveData();
+                }
+            }
+        });
+
+        // Note Management
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const saveNoteBtn = document.getElementById('saveNoteBtn');
+        const notesList = document.getElementById('notesList');
+        const noteTitleInput = document.getElementById('noteTitle');
+        const noteSubjectSelect = document.getElementById('noteSubject');
+        const noteContentInput = document.getElementById('noteContent');
+
+        addNoteBtn.addEventListener('click', () => openModal('newNoteModal'));
+
+        saveNoteBtn.addEventListener('click', () => {
+            const title = noteTitleInput.value.trim();
+            const subject = noteSubjectSelect.value;
+            const content = noteContentInput.value.trim();
+            const subjectName = noteSubjectSelect.options[noteSubjectSelect.selectedIndex].text;
+
+            if (!title || !content) {
+                alert('Titolo e contenuto sono obbligatori!');
+                return;
+            }
+
+            const date = new Date().toLocaleDateString('it-IT');
+            const id = newNoteModal.dataset.id || Date.now();
+            const note = { id, title, subject, content, date, subjectName };
+
+            if (newNoteModal.dataset.id) {
+                const index = data.notes.findIndex(n => n.id == id);
+                data.notes[index] = note;
+                const noteCard = notesList.querySelector(`[data-id="${id}"]`);
+                noteCard.classList.remove(...noteCard.classList);
+                noteCard.classList.add('note-card', subject);
+                noteCard.innerHTML = `
+                    <h3>${title}</h3>
+                    <p>${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
+                    <div class="subject-tag">${subjectName}</div>
+                    <div class="date">${date}</div>
+                    <div class="actions">
+                        <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            } else {
+                data.notes.push(note);
+                const noteCard = document.createElement('div');
+                noteCard.classList.add('note-card', subject);
+                noteCard.dataset.id = id;
+                noteCard.innerHTML = `
+                    <h3>${title}</h3>
+                    <p>${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
+                    <div class="subject-tag">${subjectName}</div>
+                    <div class="date">${date}</div>
+                    <div class="actions">
+                        <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                notesList.prepend(noteCard);
+            }
+
+            saveData();
+            closeModal('newNoteModal');
+        });
+
+        notesList.addEventListener('click', (e) => {
+            const id = e.target.closest('.note-card').dataset.id;
+            if (e.target.closest('.edit-note')) {
+                const note = data.notes.find(n => n.id == id);
+                openModal('newNoteModal', note);
+            } else if (e.target.closest('.delete-note')) {
+                if (confirm('Sei sicuro di voler eliminare questo appunto?')) {
+                    data.notes = data.notes.filter(n => n.id != id);
+                    e.target.closest('.note-card').remove();
+                    saveData();
+                }
+            }
+        });
+
+        // Memory Management
+        const addMemoryBtn = document.getElementById('addMemoryBtn');
+        const saveMemoryBtn = document.getElementById('saveMemoryBtn');
+        const palaceVisualization = document.getElementById('palaceVisualization');
+        const memoryTitleInput = document.getElementById('memoryTitle');
+        const memoryDescInput = document.getElementById('memoryDesc');
+        const memoryIconSelect = document.getElementById('memoryIcon');
+
+        addMemoryBtn.addEventListener('click', () => openModal('newMemoryModal'));
+
+        saveMemoryBtn.addEventListener('click', () => {
+            const title = memoryTitleInput.value.trim();
+            const desc = memoryDescInput.value.trim();
+            const icon = memoryIconSelect.value;
+
+            if (!title || !desc) {
+                alert('Titolo e descrizione sono obbligatori!');
+                return;
+            }
+
+            const id = newMemoryModal.dataset.id || Date.now();
+            const memory = { id, title, desc, icon };
+
+            if (newMemoryModal.dataset.id) {
+                const index = data.memories.findIndex(m => m.id == id);
+                data.memories[index] = memory;
+                const memoryItem = palaceVisualization.querySelector(`[data-id="${id}"]`);
+                memoryItem.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <div class="title">${title}</div>
+                    <div class="desc">${desc}</div>
+                    <div class="actions">
+                        <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            } else {
+                data.memories.push(memory);
+                const memoryItem = document.createElement('div');
+                memoryItem.classList.add('memory-item');
+                memoryItem.dataset.id = id;
+                memoryItem.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <div class="title">${title}</div>
+                    <div class="desc">${desc}</div>
+                    <div class="actions">
+                        <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                palaceVisualization.prepend(memoryItem);
+            }
+
+            updateDashboard();
+            saveData();
+            closeModal('newMemoryModal');
+        });
+
+        palaceVisualization.addEventListener('click', (e) => {
+            const id = e.target.closest('.memory-item').dataset.id;
+            if (e.target.closest('.edit-memory')) {
+                const memory = data.memories.find(m => m.id == id);
+                openModal('newMemoryModal', memory);
+            } else if (e.target.closest('.delete-memory')) {
+                if (confirm('Sei sicuro di voler eliminare questo elemento?')) {
+                    data.memories = data.memories.filter(m => m.id != id);
+                    e.target.closest('.memory-item').remove();
+                    updateDashboard();
+                    saveData();
+                }
+            }
+        });
+
+        // Task Management
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const saveTaskBtn = document.getElementById('saveTaskBtn');
+        const taskList = document.getElementById('taskList');
+        const taskTextInput = document.getElementById('taskText');
+        const taskDueDateInput = document.getElementById('taskDueDate');
+
+        addTaskBtn.addEventListener('click', () => openModal('newTaskModal'));
+
+        saveTaskBtn.addEventListener('click', () => {
+            const text = taskTextInput.value.trim();
+            const dueDate = taskDueDateInput.value;
+
+            if (!text) {
+                alert('La descrizione del task è obbligatoria!');
+                return;
+            }
+
+            const id = newTaskModal.dataset.id || Date.now();
+            obd
+            const task = { id, text, dueDate, completed: false };
+
+            if (newTaskModal.dataset.id) {
+                const index = data.tasks.findIndex(t => t.id == id);
+                data.tasks[index] = task;
+                const taskItem = taskList.querySelector(`[data-id="${id}"]`);
+                taskItem.classList.remove('completed');
+                taskItem.innerHTML = `
+                    <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                    <span class="task-text">${text}${dueDate ? ` (Scadenza: ${new Date(dueDate).toLocaleDateString('it-IT')})` : ''}</span>
+                    <div class="actions">
+                        <button class="action-btn edit-task"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-task"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            } else {
+                data.tasks.push(task);
+                const taskItem = document.createElement('div');
+                taskItem.classList.add('task-item');
+                taskItem.dataset.id = id;
+                taskItem.innerHTML = `
+                    <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                    <span class="task-text">${text}${dueDate ? ` (Scadenza: ${new Date(dueDate).toLocaleDateString('it-IT')})` : ''}</span>
+                    <div class="actions">
+                        <button class="action-btn edit-task"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-task"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                taskList.prepend(taskItem);
+            }
+
+            updateDashboard();
+            saveData();
+            closeModal('newTaskModal');
+        });
+
+        taskList.addEventListener('click', (e) => {
+            const id = e.target.closest('.task-item').dataset.id;
+            if (e.target.type === 'checkbox') {
+                const task = data.tasks.find(t => t.id == id);
+                task.completed = e.target.checked;
+                e.target.closest('.task-item').classList.toggle('completed', task.completed);
+                updateDashboard();
+                saveData();
+            } else if (e.target.closest('.edit-task')) {
+                const task = data.tasks.find(t => t.id == id);
+                openModal('newTaskModal', task);
+            } else if (e.target.closest('.delete-task')) {
+                if (confirm('Sei sicuro di voler eliminare questo task?')) {
+                    data.tasks = data.tasks.filter(t => t.id != id);
+                    e.target.closest('.task-item').remove();
+                    updateDashboard();
+                    saveData();
+                }
+            }
+        });
+
+        // Statistics Charts
+        let studyTimeChart, pomodoroChart;
+
+        function initializeCharts() {
+            studyTimeChart = new Chart(document.getElementById('studyTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
+                    datasets: [{
+                        label: 'Ore di Studio',
+                        data: data.stats.studyTime,
+                        borderColor: 'var(--primary-color)',
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            pomodoroChart = new Chart(document.getElementById('pomodoroChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
+                    datasets: [{
+                        label: 'Pomodori Completati',
+                        data: data.stats.pomodoros,
+                        backgroundColor: 'var(--primary-color)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStats() {
+            studyTimeChart.data.datasets[0].data = data.stats.studyTime;
+            pomodoroChart.data.datasets[0].data = data.stats.pomodoros;
+            studyTimeChart.update();
+            pomodoroChart.update();
+        }
+
+        // Dashboard Updates
+        function updateDashboard() {
+            const hours = Math.floor(focusTimeSeconds / 3600);
+            const minutes = Math.floor((focusTimeSeconds % 3600) / 60);
+            document.getElementById('studyTimeToday').textContent = `${hours}h ${minutes}m`;
+            pomodoroCountEl.textContent = pomodoroCount;
+            pomodoroCountStatEl.textContent = pomodoroCount;
+            weeklyCountEl.textContent = weeklyCount;
+            focusTimeEl.textContent = `${hours}h ${minutes}m`;
+            const completedTasks = data.tasks.filter(t => t.completed).length;
+            const totalTasks = data.tasks.length;
+            document.getElementById('taskProgress').textContent = `${completedTasks}/${totalTasks}`;
+            document.getElementById('taskProgressBar').style.width = totalTasks ? `${(completedTasks / totalTasks) * 100}%` : '0%';
+            document.getElementById('memoryCount').textContent = data.memories.length;
+        }
+
+        // Data Persistence
+        function saveData() {
+            localStorage.setItem('studyManagerData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('studyManagerData');
+            if (savedData) {
+                data = JSON.parse(savedData);
+                // Load subjects
+                subjectList.innerHTML = '<h3>Materie</h3>';
+                data.subjects.forEach(subject => {
+                    const subjectItem = document.createElement('div');
+                    subjectItem.classList.add('subject-item');
+                    subjectItem.dataset.subject = subject;
+                    subjectItem.innerHTML = `${subject} <i class="fas fa-trash delete-subject"></i>`;
+                    subjectList.insertBefore(subjectItem, addSubjectBtn);
+                    const option = document.createElement('option');
+                    option.value = subject.toLowerCase();
+                    option.textContent = subject;
+                    noteSubjectSelect.appendChild(option);
+                });
+                subjectList.appendChild(addSubjectBtn);
+
+                // Load notes
+                notesList.innerHTML = '';
+                data.notes.forEach(note => {
+                    const noteCard = document.createElement('div');
+                    noteCard.classList.add('note-card', note.subject);
+                    noteCard.dataset.id = note.id;
+                    noteCard.innerHTML = `
+                        <h3>${note.title}</h3>
+                        <p>${note.content.substring(0, 100)}${note.content.length > 100 ? '...' : ''}</p>
+                        <div class="subject-tag">${note.subjectName}</div>
+                        <div class="date">${note.date}</div>
+                        <div class="actions">
+                            <button class="action-btn edit-note"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete-note"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    notesList.prepend(noteCard);
+                });
+
+                // Load memories
+                palaceVisualization.innerHTML = '';
+                data.memories.forEach(memory => {
+                    const memoryItem = document.createElement('div');
+                    memoryItem.classList.add('memory-item');
+                    memoryItem.dataset.id = memory.id;
+                    memoryItem.innerHTML = `
+                        <i class="fas ${memory.icon}"></i>
+                        <div class="title">${memory.title}</div>
+                        <div class="desc">${memory.desc}</div>
+                        <div class="actions">
+                            <button class="action-btn edit-memory"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete-memory"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    palaceVisualization.prepend(memoryItem);
+                });
+
+                // Load tasks
+                taskList.innerHTML = '';
+                data.tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.classList.add('task-item', task.completed ? 'completed' : '');
+                    taskItem.dataset.id = task.id;
+                    taskItem.innerHTML = `
+                        <input type="checkbox" ${task.completed ? 'checked' : ''}>
+                        <span class="task-text">${task.text}${task.dueDate ? ` (Scadenza: ${new Date(task.dueDate).toLocaleDateString('it-IT')})` : ''}</span>
+                        <div class="actions">
+                            <button class="action-btn edit-task"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete-task"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    taskList.prepend(taskItem);
+                });
+
+                pomodoroCount = data.pomodoro.count;
+                focusTimeSeconds = data.pomodoro.focusTime;
+                weeklyCount = data.pomodoro.weeklyCount;
+                updateDashboard();
+            }
+        }
+
+        // Initialize
+        loadData();
+        updateTimerDisplay();
+        initializeCharts();
+        updateStats();
+    </script>
+</body>
+</html>
